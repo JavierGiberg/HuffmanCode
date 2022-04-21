@@ -1,5 +1,8 @@
 package assign1;
-
+/**
+ * Assignment 1 Submitted by: Javier Giberg. ID# 302280383 Netanel Bitton. ID#
+ * 305484651
+ */
 public class Node implements Comparable<Node> {
 	private Byte data;
 	private int frequency;

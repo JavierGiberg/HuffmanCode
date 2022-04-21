@@ -17,7 +17,7 @@ import java.util.Map;
  * 305484651
  */
 
-public class HuffmanEncoderDecoder implements Compressor {
+final public class HuffmanEncoderDecoder implements Compressor {
 
 	private static Map<Byte, String> Compress;
 	private static Map<Byte, String> root;
@@ -37,7 +37,7 @@ public class HuffmanEncoderDecoder implements Compressor {
 			byte[] fileBytes = new byte[fileinputstream.available()];
 			fileinputstream.read(fileBytes);
 			// build array byte
-			byte[] Reault = BuildCompress(fileBytes);
+			byte[] Reault = BuildFile(fileBytes);
 			// save file compress
 			OutputStream outputstream = new FileOutputStream(output_names[0]);
 			ObjectOutputStream objectoutputstream = new ObjectOutputStream(outputstream);
@@ -54,12 +54,12 @@ public class HuffmanEncoderDecoder implements Compressor {
 	}
 
 //---------------------------------------------------------------------------------------------------------------
-	static byte[] BuildCompress(byte[] fileBytes) {
-		List<Node> list = getList(fileBytes);
+	static byte[] BuildFile(byte[] bitFile) {
+		List<Node> list = getList(bitFile);
 		Node root = createTree(list);
 		root.Order();
 		Compress = getRoot(root);
-		return conversionStringToByte(fileBytes, Compress);
+		return conversionStringToByte(bitFile, Compress);
 
 	}
 
@@ -67,6 +67,7 @@ public class HuffmanEncoderDecoder implements Compressor {
 	static List<Node> getList(byte[] contentbytes) {
 		ArrayList<Node> Return = new ArrayList<Node>();
 		Map<Byte, Integer> map = new HashMap<>();
+
 		for (byte temp : contentbytes) {
 			Integer count = map.get(temp);
 			if (count == null) {
@@ -75,9 +76,11 @@ public class HuffmanEncoderDecoder implements Compressor {
 				map.put(temp, count + 1);
 			}
 		}
+
 		for (Map.Entry<Byte, Integer> entry : map.entrySet()) {
 			Return.add(new Node(entry.getKey(), entry.getValue()));
 		}
+
 		return Return;
 	}
 
@@ -99,48 +102,54 @@ public class HuffmanEncoderDecoder implements Compressor {
 
 //------------------F---------------------------------------------------------------------------------------------
 	static Map<Byte, String> getRoot(Node node) {
-		if (node == null) return null;
-		getCodes(node.getLeft(), "0", stringBuilder);
-		getCodes(node, "1", stringBuilder);
+		if (node == null)
+			return null;
+		getRoot(node.getLeft(), "0", stringBuilder);
+		getRoot(node, "1", stringBuilder);
 		return root;
 	}
 
-	static void getCodes(Node node, String bit, StringBuilder stringBuilder) {
-		StringBuilder stringBuilder2 = new StringBuilder(stringBuilder);
-		stringBuilder2.append(bit);
+	static void getRoot(Node node, String bit, StringBuilder stringBuilder) {
+		StringBuilder temp = new StringBuilder(stringBuilder);
+		temp.append(bit);
 		if (node != null) {
 			if (node.getData() == null) {
-				getCodes(node.getLeft(), "0", stringBuilder2);
-				getCodes(node.getRight(), "1", stringBuilder2);
+				getRoot(node.getLeft(), "0", temp);
+				getRoot(node.getRight(), "1", temp);
 			} else {
-				root.put(node.getData(), stringBuilder2.toString());
+				root.put(node.getData(), temp.toString());
 			}
 		}
 	}
 
 //---------------------------------------------------------------------------------------------------------------
 	static byte[] conversionStringToByte(byte[] bytes, Map<Byte, String> Codes) {
-		StringBuilder stringBuilder = new StringBuilder();
+		int length, index = 0;
+		StringBuilder tempBuilder = new StringBuilder();
+		String temp;
+		byte[] Byte;
+
 		for (byte bYte : bytes) {
-			stringBuilder.append(Codes.get(bYte));
+			tempBuilder.append(Codes.get(bYte));
 		}
-		int length = 0;
-		if (stringBuilder.length() % 8 == 0) {
-			length = stringBuilder.length() / 8;
+
+		if (tempBuilder.length() % 8 == 0) {
+			length = (tempBuilder.length() / 8);
 		} else {
-			length = stringBuilder.length() / 8 + 1;
+			length = (tempBuilder.length() / 8) + 1;
 		}
-		int index = 0;
-		byte[] Byte = new byte[length];
-		for (int i = 0; i < stringBuilder.length(); i = i + 8) {
-			String temp;
-			if (stringBuilder.length() < i + 8) {
-				temp = stringBuilder.substring(i);
+
+		Byte = new byte[length];
+		for (int i = 0; i < tempBuilder.length(); ) {
+
+			if (tempBuilder.length() < (i + 8)) {
+				temp = tempBuilder.substring(i);
 			} else {
-				temp = stringBuilder.substring(i, i + 8);
+				temp = tempBuilder.substring(i, (i + 8));
 			}
 			Byte[index] = (byte) Integer.parseInt(temp, 2);
 			index++;
+			i = i + 8;
 		}
 		return Byte;
 	}
@@ -151,9 +160,9 @@ public class HuffmanEncoderDecoder implements Compressor {
 		try {
 			InputStream inputstream = new FileInputStream(input_names[0]);
 			ObjectInputStream objectinputstream = new ObjectInputStream(inputstream);
-			byte[] huffmanBytes = (byte[]) objectinputstream.readObject();
-			Map<Byte, String> huffmanMap = (Map<Byte, String>) objectinputstream.readObject();
-			byte[] Reault = decode(huffmanMap, huffmanBytes);
+			byte[] fileBytes = (byte[]) objectinputstream.readObject();
+			Map<Byte, String> map = (Map<Byte, String>) objectinputstream.readObject();
+			byte[] Reault = BuildFile(map, fileBytes);
 			OutputStream outputstream = new FileOutputStream(output_names[0]);
 			outputstream.write(Reault);
 			outputstream.close();
@@ -165,38 +174,38 @@ public class HuffmanEncoderDecoder implements Compressor {
 	}
 
 //---------------------------------------------------------------------------------------------------------------
-	public static byte[] decode(Map<Byte, String> huffmanCodes, byte[] huffmanCodesByte) {
-		StringBuilder stringBuilder1 = new StringBuilder();
-		for (int i = 0; i < huffmanCodesByte.length; i++) {
-			byte b = huffmanCodesByte[i];
-			boolean flag = (i == huffmanCodesByte.length - 1);
-			stringBuilder1.append(convertByteToString(!flag, b));
-		}
+	public static byte[] BuildFile(Map<Byte, String> EnrtyMap, byte[] bitFile) {
+		int count;
 		Map<String, Byte> map = new HashMap<String, Byte>();
-		for (Map.Entry<Byte, String> entry : huffmanCodes.entrySet()) {
+		List<Byte> list = new ArrayList<>();
+		byte[] byteFromList;
+
+		for (int i = 0; i < bitFile.length; i++) {
+			stringBuilder.append(convertByteToString(!(i == bitFile.length - 1),  bitFile[i]));
+		}
+
+		for (Map.Entry<Byte, String> entry : EnrtyMap.entrySet()) {
 			map.put(entry.getValue(), entry.getKey());
 		}
-		List<Byte> list = new ArrayList<>();
-		for (int i = 0; i < stringBuilder1.length();) {
-			int count = 0;
-			boolean flag = true;
-			while (flag) {
-				String search = stringBuilder1.substring(i, i + count);
-				Byte b = map.get(search);
-				if (b == null) {
+
+		for (int i = 0; i < stringBuilder.length();) {
+			count = 0;
+			while (true) {
+				Byte Temp = map.get(stringBuilder.substring(i, i + count));
+				if (Temp == null) {
 					count++;
 				} else {
-					flag = false;
-					list.add(b);
+					list.add(Temp);
+					break;
 				}
 			}
 			i = i + count;
 		}
-		byte[] listToByte = new byte[list.size()];
+		byteFromList = new byte[list.size()];
 		for (int i = 0; i < list.size(); i++) {
-			listToByte[i] = list.get(i);
+			byteFromList[i] = list.get(i);
 		}
-		return listToByte;
+		return byteFromList;
 	}
 
 //---------------------------------------------------------------------------------------------------------------
