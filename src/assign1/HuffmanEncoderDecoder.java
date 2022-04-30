@@ -11,6 +11,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * Assignment 1 Submitted by: Javier Giberg. ID# 302280383 Netanel Bitton. ID#
@@ -19,37 +21,32 @@ import java.util.Map;
 
 final public class HuffmanEncoderDecoder implements Compressor {
 
-	private static Map<Byte, String> Compress;
-	private static Map<Byte, String> root;
+	private static HashMap<Byte, String> Compress;
+	private static HashMap<Byte, String> root;
 	private static StringBuilder stringBuilder;
 
 	public HuffmanEncoderDecoder() {
-		Compress = new HashMap<>();
-		root = new HashMap<>();
-		stringBuilder = new StringBuilder();
+		this.Compress = new HashMap<>();
+		this.root = new HashMap<>();
+		this.stringBuilder = new StringBuilder();
 	}
 
 //-------------------------------------------------Compress------------------------------------------------------
 	public void Compress(String[] input_names, String[] output_names) {
 		try {
-			// input and read file
 			FileInputStream fileinputstream = new FileInputStream(input_names[0]);
 			byte[] fileBytes = new byte[fileinputstream.available()];
 			fileinputstream.read(fileBytes);
-			// build array byte
 			byte[] Reault = BuildFile(fileBytes);
-			// save file compress
 			OutputStream outputstream = new FileOutputStream(output_names[0]);
 			ObjectOutputStream objectoutputstream = new ObjectOutputStream(outputstream);
-			// write byte code
 			objectoutputstream.writeObject(Reault);
-			// write HashMap
 			objectoutputstream.writeObject(Compress);
 			objectoutputstream.close();
 			outputstream.close();
 			fileinputstream.close();
 		} catch (Exception e) {
-			System.err.println("Excepptio from \"Compress\"- line 35-57");
+			System.err.println(e.getMessage());
 		}
 	}
 
@@ -59,26 +56,25 @@ final public class HuffmanEncoderDecoder implements Compressor {
 		Node root = createTree(list);
 		root.Order();
 		Compress = getRoot(root);
-		return conversionStringToByte(bitFile, Compress);
-
+		return convertStringToByte(bitFile, Compress);
 	}
 
 //---------------------------------------------------------------------------------------------------------------
 	static List<Node> getList(byte[] contentbytes) {
 		ArrayList<Node> Return = new ArrayList<Node>();
-		Map<Byte, Integer> map = new HashMap<>();
+		HashMap<Byte, Integer> map = new HashMap<>();
 
-		for (byte temp : contentbytes) {
-			Integer count = map.get(temp);
+		for (int i = 0; i < contentbytes.length; i++) {
+			Integer count = map.get(contentbytes[i]);
 			if (count == null) {
-				map.put(temp, 1);
+				map.put(contentbytes[i], 1);
 			} else {
-				map.put(temp, count + 1);
+				map.put(contentbytes[i], count + 1);
 			}
 		}
 
-		for (Map.Entry<Byte, Integer> entry : map.entrySet()) {
-			Return.add(new Node(entry.getKey(), entry.getValue()));
+		for (Map.Entry<Byte, Integer> temp : map.entrySet()) {
+			Return.add(new Node(temp.getKey(), temp.getValue()));
 		}
 
 		return Return;
@@ -100,8 +96,8 @@ final public class HuffmanEncoderDecoder implements Compressor {
 		return list.get(0);
 	}
 
-//------------------F---------------------------------------------------------------------------------------------
-	static Map<Byte, String> getRoot(Node node) {
+//---------------------------------------------------------------------------------------------------------------
+	static HashMap<Byte, String> getRoot(Node node) {
 		if (node == null)
 			return null;
 		getRoot(node.getLeft(), "0", stringBuilder);
@@ -123,14 +119,14 @@ final public class HuffmanEncoderDecoder implements Compressor {
 	}
 
 //---------------------------------------------------------------------------------------------------------------
-	static byte[] conversionStringToByte(byte[] bytes, Map<Byte, String> Codes) {
+	static byte[] convertStringToByte(byte[] bytes, HashMap<Byte, String> Codes) {
 		int length, index = 0;
 		StringBuilder tempBuilder = new StringBuilder();
 		String temp;
-		byte[] Byte;
+		byte[] Return;
 
-		for (byte bYte : bytes) {
-			tempBuilder.append(Codes.get(bYte));
+		for (int i = 0; i < bytes.length; i++) {
+			tempBuilder.append(Codes.get(bytes[i]));
 		}
 
 		if (tempBuilder.length() % 8 == 0) {
@@ -139,19 +135,19 @@ final public class HuffmanEncoderDecoder implements Compressor {
 			length = (tempBuilder.length() / 8) + 1;
 		}
 
-		Byte = new byte[length];
-		for (int i = 0; i < tempBuilder.length(); ) {
+		Return = new byte[length];
+		for (int i = 0; i < tempBuilder.length(); i = (i + 8)) {
 
-			if (tempBuilder.length() < (i + 8)) {
+			if (tempBuilder.length() < i + 8) {
 				temp = tempBuilder.substring(i);
 			} else {
 				temp = tempBuilder.substring(i, (i + 8));
 			}
-			Byte[index] = (byte) Integer.parseInt(temp, 2);
+			Return[index] = (byte) Integer.parseInt(temp, 2);
 			index++;
-			i = i + 8;
+
 		}
-		return Byte;
+		return Return;
 	}
 
 //------------------------------------------decode---------------------------------------------------------------
@@ -161,7 +157,7 @@ final public class HuffmanEncoderDecoder implements Compressor {
 			InputStream inputstream = new FileInputStream(input_names[0]);
 			ObjectInputStream objectinputstream = new ObjectInputStream(inputstream);
 			byte[] fileBytes = (byte[]) objectinputstream.readObject();
-			Map<Byte, String> map = (Map<Byte, String>) objectinputstream.readObject();
+			HashMap<Byte, String> map = (HashMap<Byte, String>) objectinputstream.readObject();
 			byte[] Reault = BuildFile(map, fileBytes);
 			OutputStream outputstream = new FileOutputStream(output_names[0]);
 			outputstream.write(Reault);
@@ -169,37 +165,43 @@ final public class HuffmanEncoderDecoder implements Compressor {
 			objectinputstream.close();
 			inputstream.close();
 		} catch (Exception e) {
-			System.err.println("Excepptio from \"Decompress\"- line 148-172");
+			System.err.println(e.getMessage());
 		}
 	}
 
 //---------------------------------------------------------------------------------------------------------------
-	public static byte[] BuildFile(Map<Byte, String> EnrtyMap, byte[] bitFile) {
+	public static byte[] BuildFile(HashMap<Byte, String> EnrtyMap, byte[] bitFile) {
 		int count;
-		Map<String, Byte> map = new HashMap<String, Byte>();
+		HashMap<String, Byte> map = new HashMap<String, Byte>();
+
 		List<Byte> list = new ArrayList<>();
 		byte[] byteFromList;
 
 		for (int i = 0; i < bitFile.length; i++) {
-			stringBuilder.append(convertByteToString(!(i == bitFile.length - 1),  bitFile[i]));
+			stringBuilder.append(convertByteToString(!(i == bitFile.length - 1), bitFile[i]));
 		}
 
-		for (Map.Entry<Byte, String> entry : EnrtyMap.entrySet()) {
+		for (HashMap.Entry<Byte, String> entry : EnrtyMap.entrySet()) {
 			map.put(entry.getValue(), entry.getKey());
 		}
 
-		for (int i = 0; i < stringBuilder.length();) {
+		for (int i = 0; i < stringBuilder.length(); i = i + count) {
 			count = 0;
 			while (true) {
-				Byte Temp = map.get(stringBuilder.substring(i, i + count));
-				if (Temp == null) {
-					count++;
-				} else {
-					list.add(Temp);
+				try {
+
+					Byte Temp = map.get(stringBuilder.substring(i, (i + count)));
+					if (Temp == null) {
+						count++;
+					} else {
+						list.add(Temp);
+						break;
+					}
+				} catch (Exception e) {
+					Byte Temp = map.get(stringBuilder.substring(i, stringBuilder.length()));
 					break;
 				}
 			}
-			i = i + count;
 		}
 		byteFromList = new byte[list.size()];
 		for (int i = 0; i < list.size(); i++) {
@@ -212,13 +214,15 @@ final public class HuffmanEncoderDecoder implements Compressor {
 	public static String convertByteToString(boolean flag, byte bit) {
 		int temp = bit;
 		if (flag) {
-			temp |= 256;
+			temp = temp + 256;
 		}
+
 		String Return = Integer.toBinaryString(temp);
+
 		if (flag) {
 			return Return.substring(Return.length() - 8);
 		} else {
-			return Return;
+			return "0"+Return;
 		}
 	}
 }

@@ -17,6 +17,11 @@ public class Node implements Comparable<Node> {
 		return data;
 	}
 
+	@Override
+	public String toString() {
+		return "Node [data=" + data + ", frequency=" + frequency + ", left=" + left + ", right=" + right + "]";
+	}
+
 	public int getFrequency() {
 		return frequency;
 	}
